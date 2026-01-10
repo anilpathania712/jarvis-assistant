@@ -1,20 +1,20 @@
-from flask import Flask, request, jsonify, send_file
-from flask_cors import CORS
-import whisper
-import torch  # Import torch to handle precision settings
-import tempfile
-import os
-import datetime
-import wikipedia
-import pyjokes
-import webbrowser
-import platform
-import subprocess
-import pyautogui
-import json
-import inspect
-import pyttsx3 
-from openai import OpenAI
+from flask import Flask, request, jsonify, send_file        # Flask framework and utilities for web app and API handling
+from flask_cors import CORS                                # Enable Cross-Origin Resource Sharing (CORS) for API access from other domains
+import whisper                                              # OpenAI Whisper model for speech-to-text transcription
+import torch                                                # PyTorch, used by Whisper for model operations and precision handling
+import tempfile                                             # Create and manage temporary files (e.g., uploaded audio)
+import os                                                   # Interact with the operating system (file paths, environment variables)
+import datetime                                             # Handle dates and times for logging, timestamps, file naming
+import wikipedia                                           # Fetch summaries or pages from Wikipedia
+import pyjokes                                              # Generate random jokes (programming/general)
+import webbrowser                                           # Open URLs in the default web browser
+import platform                                             # Get system/platform information (OS, version, architecture)
+import subprocess                                          # Run external commands or programs
+import pyautogui                                            # Automate keyboard/mouse actions and take screenshots
+import json                                                 # Parse and generate JSON data
+import inspect                                              # Introspection for examining functions, classes, objects
+import pyttsx3                                              # Text-to-speech library for making the assistant speak
+from openai import OpenAI                                   # Access OpenAI APIs for GPT models, embeddings, etc.
 
 # --- CONFIGURATION ---
 
