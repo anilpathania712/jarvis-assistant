@@ -15,6 +15,7 @@ import json                                                 # Parse and generate
 import inspect                                              # Introspection for examining functions, classes, objects
 import pyttsx3                                              # Text-to-speech library for making the assistant speak
 from openai import OpenAI                                   # Access OpenAI APIs for GPT models, embeddings, etc.
+from dotenv import load_dotenv
 
 # --- CONFIGURATION ---
 
@@ -42,11 +43,14 @@ model = model.to(torch.float32)
 # Debug print: Verify the model data type is torch.float32
 print(next(model.parameters()).dtype) 
 
+load_dotenv()  # loads .env into environment
+
 # --- SETUP GROQ CLIENT ---
 # Initialize the OpenAI client but point it to Groq's API endpoint.
 # Groq provides very fast inference for open-source models like Llama 3.
 # Note: API keys should ideally be stored in environment variables for security.
-client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key="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")
+
+client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.getenv("OPENAI_API_KEY"))
 
 # Identify the Operating System to execute platform-specific commands later
 OS_NAME = platform.system()
