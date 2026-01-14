@@ -1,0 +1,10 @@
+flask
+flask-cors
+openai
+python-dotenv
+torch
+openai-whisper
+wikipedia
+pyjokes
+pyautogui
+pyttsx3
