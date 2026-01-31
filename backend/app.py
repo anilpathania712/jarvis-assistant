@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, send_file        # Flask framework and utilities for web app and API handling
 from flask_cors import CORS                                # Enable Cross-Origin Resource Sharing (CORS) for API access from other domains
-import whisper                                              # OpenAI Whisper model for speech-to-text transcription
-import torch                                                # PyTorch, used by Whisper for model operations and precision handling
+from faster_whisper import WhisperModel                     # OpenAI Whisper model for speech-to-text transcription
 import tempfile                                             # Create and manage temporary files (e.g., uploaded audio)
 import os                                                   # Interact with the operating system (file paths, environment variables)
 import datetime                                             # Handle dates and times for logging, timestamps, file naming
@@ -26,22 +25,14 @@ app = Flask(__name__)
 # (which might be on a different port/domain) to communicate with this backend.
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# --- LOAD WHISPER MODEL (Speech-to-Text) ---
-print("Initializing JARVIS Systems...")
-print("Loading Whisper model in FP32 precision...")
-
-# 1. Force PyTorch to use highest precision (Float32) instead of optimized lower precision (like Float16).
-# This prevents potential "matmul" errors and increases stability on CPU, at the cost of speed.
-torch.set_float32_matmul_precision('highest')
-
+print("Loading Faster-Whisper model (CPU, INT8)...")
 # 2. Load the Whisper "base" model onto the CPU.
-model = whisper.load_model("base", device="cpu")
-
-# Explicitly convert the model weights to Float32 to ensure numerical stability.
-model = model.to(torch.float32)
-
-# Debug print: Verify the model data type is torch.float32
-print(next(model.parameters()).dtype) 
+model = WhisperModel(
+    "base",
+    device="cpu",
+    compute_type="int8"   # very fast on CPU
+)
+print("Faster-Whisper loaded successfully.")
 
 load_dotenv()  # loads .env into environment
 
@@ -50,7 +41,7 @@ load_dotenv()  # loads .env into environment
 # Groq provides very fast inference for open-source models like Llama 3.
 # Note: API keys should ideally be stored in environment variables for security.
 
-client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.getenv("API_KEY"))
 
 # Identify the Operating System to execute platform-specific commands later
 OS_NAME = platform.system()
@@ -480,9 +471,8 @@ def voice_command():
             return jsonify({"error": "FFmpeg conversion failed. Ensure FFmpeg is installed."}), 500
 
         print("[LOG] Transcribing audio...")
-        # Run Whisper model to get text
-        result = model.transcribe(wav_path)
-        text = result.get("text", "").strip()
+        segments, info = model.transcribe(wav_path)
+        text = " ".join(segment.text for segment in segments).strip()
 
         # Cleanup audio files (Delete temp files)
         os.remove(webm_path)
