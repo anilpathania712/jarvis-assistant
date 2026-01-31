@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file        # Flask framework and utilities for web app and API handling
 from flask_cors import CORS                                # Enable Cross-Origin Resource Sharing (CORS) for API access from other domains
-from faster_whisper import WhisperModel                     # OpenAI Whisper model for speech-to-text transcription
+from faster_whisper import WhisperModel                    # Faster-Whisper model for fast CPU-based speech-to-text
 import tempfile                                             # Create and manage temporary files (e.g., uploaded audio)
 import os                                                   # Interact with the operating system (file paths, environment variables)
 import datetime                                             # Handle dates and times for logging, timestamps, file naming
@@ -16,7 +16,7 @@ import pyttsx3                                              # Text-to-speech lib
 from openai import OpenAI                                   # Access OpenAI APIs for GPT models, embeddings, etc.
 from dotenv import load_dotenv
 
-# --- CONFIGURATION ---
+#  CONFIGURATION 
 
 # Initialize the Flask web application
 app = Flask(__name__)
@@ -30,13 +30,14 @@ print("Loading Faster-Whisper model (CPU, INT8)...")
 model = WhisperModel(
     "base",
     device="cpu",
-    compute_type="int8"   # very fast on CPU
+    compute_type="int8",
+    cpu_threads=os.cpu_count()
 )
 print("Faster-Whisper loaded successfully.")
 
 load_dotenv()  # loads .env into environment
 
-# --- SETUP GROQ CLIENT ---
+#  SETUP GROQ CLIENT 
 # Initialize the OpenAI client but point it to Groq's API endpoint.
 # Groq provides very fast inference for open-source models like Llama 3.
 # Note: API keys should ideally be stored in environment variables for security.
@@ -47,7 +48,7 @@ client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.getenv("AP
 OS_NAME = platform.system()
 
 
-# --- 1. SYSTEM FUNCTIONS (Tools the AI can use) ---
+#  1. SYSTEM FUNCTIONS (Tools the AI can use) 
 
 def open_application(app_name):
     """
@@ -201,7 +202,7 @@ def generate_tts(text):
         return None
 
 
-# --- 2. DYNAMIC TOOL REGISTRY ---
+#  2. DYNAMIC TOOL REGISTRY 
 # This dictionary maps string names (defined in the AI schema below) to the actual python functions above.
 # When the AI returns a function name (e.g., "open_application"), Python looks it up here to execute it.
 TOOL_REGISTRY = {
@@ -222,7 +223,7 @@ TOOL_REGISTRY = {
 }
 
 
-# --- 3. THE BRAIN (AI PROCESSOR) ---
+#  3. THE BRAIN (AI PROCESSOR) 
 
 def analyze_intent_with_ai(user_text):
     """Sends the user text to AI to determine intent and parameters."""
@@ -441,7 +442,7 @@ def analyze_intent_with_ai(user_text):
         return {"type": "error", "content": "I encountered a problem processing that request."}
 
 
-# --- FLASK ROUTES ---
+#  FLASK ROUTES 
 
 @app.route("/voice", methods=["POST"])
 def voice_command():
@@ -455,7 +456,7 @@ def voice_command():
 
         audio = request.files["audio"]
 
-        # 1. Transcribe Audio (Whisper)
+        # 1. Transcribe Audio (Faster-Whisper)
         # Save uploaded file to a temporary location
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp:
             audio.save(temp.name)
@@ -522,14 +523,14 @@ def get_tts_file(filename):
         return jsonify({"error": str(e)}), 500
 
 
-# --- MAIN ENTRY POINT ---
+#  MAIN ENTRY POINT 
 if __name__ == "__main__":
-    print("------------------------------------------------")
+    print("")
     print("JARVIS SYSTEM ONLINE")
     print(f"OS Detected: {OS_NAME}")
-    print("Whisper Model: Loaded (FP32 Precision)")
+    print("Faster-Whisper Model: (CPU, INT8)")
     print("Groq API: Connected")
     print("Waiting for voice commands...")
-    print("------------------------------------------------")
+    print("")
     # Run Flask server accessible on the local network
     app.run(host="0.0.0.0", port=5000, debug=True)
